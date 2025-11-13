@@ -61,6 +61,8 @@ class TavilySearchService:
             List of SourceData with extracted content
         """
         logger.info(f"📄 Tavily extract: {len(urls)} URLs")
+        for j, url in enumerate(urls):
+          logger.info(f"  URL {j}: {url}")
 
         response = await self._client.extract(urls=urls)
 
