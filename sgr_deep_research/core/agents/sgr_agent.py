@@ -3,6 +3,8 @@ from typing import Type
 from sgr_deep_research.core.base_agent import BaseAgent
 from sgr_deep_research.core.tools import (
     BaseTool,
+    GeneratePlanTool,
+    AdaptPlanTool,
     ClarificationTool,
     CreateReportTool,
     FinalAnswerTool,
@@ -10,6 +12,7 @@ from sgr_deep_research.core.tools import (
     NextStepToolStub,
     ReasoningTool,
     WebSearchTool,
+    ExtractPageContentTool,
     research_agent_tools,
     system_agent_tools,
 )
@@ -63,6 +66,42 @@ class SGRAgent(BaseAgent):
         if self._context.searches_used >= self.max_searches:
             tools -= {
                 WebSearchTool,
+            }
+        if self._context.plan_generations_used == 0:
+            tools = {
+                GeneratePlanTool,
+            }
+        else:
+            tools -= {
+                GeneratePlanTool
+            }
+        if self._context.report_creations_used > 0:
+            tools = {
+                FinalAnswerTool,
+            }
+        else:
+            tools -= {
+                FinalAnswerTool,
+            }
+        if self._context.searches_used == 0:
+            tools -= {
+                AdaptPlanTool,
+                ExtractPageContentTool,
+                CreateReportTool,
+                FinalAnswerTool,
+            }
+        if self._context.page_extractions_used == 0:
+            tools -= {
+                AdaptPlanTool,
+            }
+        if (self._context.page_extractions_used >= self.max_searches) or \
+           (self._context.page_extractions_used >= self._context.searches_used):
+            tools -= {
+                ExtractPageContentTool,
+            }
+        if self._context.plan_adaptations_used >= self._context.searches_used:
+            tools -= {
+                AdaptPlanTool,
             }
         return NextStepToolsBuilder.build_NextStepTools(list(tools))
 

@@ -71,7 +71,11 @@ class BaseAgent:
        🧠 Reasoning Steps: {result.reasoning_steps}
        📊 Current Situation: '{result.current_situation[:400]}...'
        📋 Plan Status: '{result.plan_status[:400]}...'
+       🔍 Plan generations  Done: {self._context.plan_generations_used}
+       🔍 Plan adas  adaptations: {self._context.plan_adaptations_used}
        🔍 Searches Done: {self._context.searches_used}
+       🔍 Page extractions Done: {self._context.page_extractions_used}
+       🔍 Report creations Done: {self._context.report_creations_used}
        🔍 Clarifications Done: {self._context.clarifications_used}
        ✅ Enough Data: {result.enough_data}
        📝 Remaining Steps: {result.remaining_steps}

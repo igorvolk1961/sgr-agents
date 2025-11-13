@@ -82,4 +82,5 @@ class CreateReportTool(BaseTool):
             f"   📊 Words: {report['word_count']}, Sources: {report['sources_count']}\n"
             f"   💾 Saved: {filepath}\n"
         )
+        context.report_creations_used += 1
         return json.dumps(report, indent=2, ensure_ascii=False)

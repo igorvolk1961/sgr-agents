@@ -55,7 +55,11 @@ class ResearchContext(BaseModel):
     searches: list[SearchResult] = Field(default_factory=list, description="List of performed searches")
     sources: dict[str, SourceData] = Field(default_factory=dict, description="Dictionary of found sources")
 
+    plan_generations_used: int = Field(default=0, description="Number of plan generations performed")
+    plan_adaptations_used: int = Field(default=0, description="Number of plan adaptations performed")
     searches_used: int = Field(default=0, description="Number of searches performed")
+    page_extractions_used: int = Field(default=0, description="Number of page extractions performed")
+    report_creations_used: int = Field(default=0, description="Number of report creations requested")
 
     clarifications_used: int = Field(default=0, description="Number of clarifications requested")
     clarification_received: asyncio.Event = Field(

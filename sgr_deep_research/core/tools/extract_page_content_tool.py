@@ -76,5 +76,6 @@ class ExtractPageContentTool(BaseTool):
                 else:
                     formatted_result += f"{str(source)}\n*Failed to extract content*\n\n"
 
+        context.page_extractions_used += 1
         logger.debug(formatted_result[:500])
         return formatted_result
