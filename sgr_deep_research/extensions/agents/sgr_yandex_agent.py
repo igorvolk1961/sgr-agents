@@ -1,9 +1,15 @@
 from typing import Type
 
 from openai import AsyncOpenAI
+import logging
+import httpx
+import uuid
+from datetime import datetime
+from sgr_deep_research.core.models import ResearchContext
+from sgr_deep_research.core.stream import OpenAIStreamingGenerator
 
 from sgr_deep_research.core.agent_definition import ExecutionConfig, LLMConfig, PromptsConfig
-from sgr_deep_research.core.base_agent import BaseAgent
+from sgr_deep_research.core.agents import SGRAgent
 from sgr_deep_research.core.tools import (
     BaseTool,
     ClarificationTool,
@@ -14,11 +20,10 @@ from sgr_deep_research.core.tools import (
     WebSearchTool,
 )
 
-
-class SGRAgent(BaseAgent):
+class SGRYandexAgent(SGRAgent):
     """Agent for deep research tasks using SGR framework."""
 
-    name: str = "sgr_agent"
+    name: str = "sgr_yandex_agent"
 
     def __init__(
         self,
@@ -29,6 +34,16 @@ class SGRAgent(BaseAgent):
         execution_config: ExecutionConfig,
         toolkit: list[Type[BaseTool]] | None = None,
     ):
+        del openai_client
+
+        yandex_cloud_folder = extractCloudFolder(llm_config.model)
+        client_kwargs = {"base_url": llm_config.base_url, "api_key": llm_config.api_key,
+                         "project": yandex_cloud_folder}
+        if llm_config.proxy:
+            client_kwargs["http_client"] = httpx.AsyncClient(proxy=llm_config.proxy)
+
+        openai_client = AsyncOpenAI(**client_kwargs)
+
         super().__init__(
             task=task,
             openai_client=openai_client,
@@ -57,53 +72,14 @@ class SGRAgent(BaseAgent):
             }
         return NextStepToolsBuilder.build_NextStepTools(list(tools))
 
-    async def _reasoning_phase(self) -> NextStepToolStub:
-        async with self.openai_client.chat.completions.stream(
-            model=self.llm_config.model,
-            response_format=await self._prepare_tools(),
-            messages=await self._prepare_context(),
-            max_tokens=self.llm_config.max_tokens,
-            temperature=self.llm_config.temperature,
-        ) as stream:
-            async for event in stream:
-                if event.type == "chunk":
-                    self.streaming_generator.add_chunk(event.chunk)
-        reasoning: NextStepToolStub = (await stream.get_final_completion()).choices[0].message.parsed  # type: ignore
-        # we are not fully sure if it should be in conversation or not. Looks like not necessary data
-        # self.conversation.append({"role": "assistant", "content": reasoning.model_dump_json(exclude={"function"})})
-        self._log_reasoning(reasoning)
-        return reasoning
-
-    async def _select_action_phase(self, reasoning: NextStepToolStub) -> BaseTool:
-        tool = reasoning.function
-        if not isinstance(tool, BaseTool):
-            raise ValueError("Selected tool is not a valid BaseTool instance")
-        self.conversation.append(
-            {
-                "role": "assistant",
-                "content": reasoning.remaining_steps[0] if reasoning.remaining_steps else "Completing",
-                "tool_calls": [
-                    {
-                        "type": "function",
-                        "id": f"{self._context.iteration}-action",
-                        "function": {
-                            "name": tool.tool_name,
-                            "arguments": tool.model_dump_json(),
-                        },
-                    }
-                ],
-            }
-        )
-        self.streaming_generator.add_tool_call(
-            f"{self._context.iteration}-action", tool.tool_name, tool.model_dump_json()
-        )
-        return tool
-
-    async def _action_phase(self, tool: BaseTool) -> str:
-        result = await tool(self._context)
-        self.conversation.append(
-            {"role": "tool", "content": result, "tool_call_id": f"{self._context.iteration}-action"}
-        )
-        self.streaming_generator.add_chunk_from_str(f"{result}\n")
-        self._log_tool_execution(tool, result)
-        return result
+def extractCloudFolder(base_url):
+    """
+    Extracts the cloud folder from a base_url of form
+    "gpt://<cloud_folder>/..." (returns <cloud_folder>).
+    Returns None if not matched.
+    """
+    prefix = "gpt://"
+    if base_url.startswith(prefix):
+        after_prefix = base_url[len(prefix):]
+        return after_prefix.split("/", 1)[0]
+    return None

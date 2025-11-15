@@ -8,13 +8,13 @@ client = OpenAI(
 
 # Make research request
 response = client.chat.completions.create(
-    model="sgr_agent",
-    messages=[{"role": "user", "content": "Research BMW X6 2025 prices in Russia"}],
+    model="custom_sgr_yandex_agent",
+    messages=[{"role": "user", "content": "Research BMW X6 2025 prices in Russia and create report"}],
     stream=True,
     temperature=0.4,
 )
 
 # Print streaming response
 for chunk in response:
-    if chunk.choices[0].delta.content:
+    if chunk.choices and chunk.choices[0].delta.content:
         print(chunk.choices[0].delta.content, end="")
