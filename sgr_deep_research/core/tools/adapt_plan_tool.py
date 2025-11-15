@@ -20,6 +20,7 @@ class AdaptPlanTool(BaseTool):
     next_steps: list[str] = Field(description="Updated remaining steps", min_length=2, max_length=4)
 
     async def __call__(self, context: ResearchContext) -> str:
+        context.plan_adaptations_used += 1
         return self.model_dump_json(
             indent=2,
             exclude={

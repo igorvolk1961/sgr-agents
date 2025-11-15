@@ -12,12 +12,15 @@ from sgr_deep_research.core.agent_definition import ExecutionConfig, LLMConfig, 
 from sgr_deep_research.core.agents import SGRAgent
 from sgr_deep_research.core.tools import (
     BaseTool,
+    GeneratePlanTool,
+    AdaptPlanTool,
     ClarificationTool,
     CreateReportTool,
     FinalAnswerTool,
     NextStepToolsBuilder,
     NextStepToolStub,
     WebSearchTool,
+    ExtractPageContentTool,
 )
 
 class SGRYandexAgent(SGRAgent):
@@ -58,8 +61,13 @@ class SGRYandexAgent(SGRAgent):
         """Prepare tool classes with current context limits."""
         tools = set(self.toolkit)
         if self._context.iteration >= self.max_iterations:
-            tools = {
+            if CreateReportTool in tools:
+              tools += {
                 CreateReportTool,
+                FinalAnswerTool,
+              }
+            else:
+             tools += {
                 FinalAnswerTool,
             }
         if self._context.clarifications_used >= self.max_clarifications:
@@ -69,6 +77,50 @@ class SGRYandexAgent(SGRAgent):
         if self._context.searches_used >= self.max_searches:
             tools -= {
                 WebSearchTool,
+            }
+        if self._context.plan_generations_used == 0:
+            if GeneratePlanTool in tools:
+              tools = {
+                  GeneratePlanTool,
+              }
+        else:
+            tools -= {
+                GeneratePlanTool
+            }
+        if  CreateReportTool in  tools:
+          if self._context.report_creations_used > 0:
+              tools = {
+                  FinalAnswerTool,
+              }
+          else:
+              tools -= {
+                  FinalAnswerTool,
+              }
+        if self._context.searches_used == 0:
+            tools -= {
+                AdaptPlanTool,
+                ExtractPageContentTool,
+                CreateReportTool,
+                FinalAnswerTool,
+            }
+        if self._context.page_extractions_used == 0:
+            tools -= {
+                AdaptPlanTool,
+            }
+        if (self._context.page_extractions_used >= self.max_searches) or \
+           (self._context.page_extractions_used >= self._context.searches_used):
+            tools -= {
+                ExtractPageContentTool,
+            }
+
+        if self._context.page_extractions_used < self._context.searches_used: ###??? Возможны ли поиски страниц без их чтения
+            tools -= {
+                   WebSearchTool,
+            }
+
+        if self._context.plan_adaptations_used >= self._context.searches_used:
+            tools -= {
+                AdaptPlanTool,
             }
         return NextStepToolsBuilder.build_NextStepTools(list(tools))
 
