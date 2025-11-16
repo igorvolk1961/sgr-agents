@@ -7,6 +7,7 @@ from sgr_deep_research.core.next_step_tool import (
     NextStepToolStub,
 )
 from sgr_deep_research.core.tools.adapt_plan_tool import AdaptPlanTool
+from sgr_deep_research.core.tools.base_llm_call_tool import BaseLLMCallTool
 from sgr_deep_research.core.tools.clarification_tool import ClarificationTool
 from sgr_deep_research.core.tools.create_report_tool import CreateReportTool
 from sgr_deep_research.core.tools.extract_page_content_tool import ExtractPageContentTool
@@ -45,6 +46,7 @@ __all__ = [
     "CreateReportTool",
     "FinalAnswerTool",
     "ReasoningTool",
+    "BaseLLMCallTool",
     # Tool lists
     "NextStepToolStub",
     "NextStepToolsBuilder",
