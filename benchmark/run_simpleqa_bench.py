@@ -5,7 +5,7 @@ import os
 from typing import Any, Dict, List
 
 import pandas as pd
-from benchmark_agent import BenchmarkAgent
+from benchmark_agent import create_benchmark_agent
 from dotenv import load_dotenv
 
 from benchmark.utils import (
@@ -19,6 +19,7 @@ from sgr_deep_research.core.agent_config import GlobalConfig
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 config_path = os.path.join(project_root, "config.yaml")
 os.environ.setdefault("APP_CONFIG", config_path)
+GlobalConfig.from_yaml(config_path)
 
 load_dotenv()
 
@@ -30,7 +31,11 @@ logger.info(f"Using config file: {config_path}")
 
 async def benchmark_agent(question, answer, model_config) -> Dict[str, Any]:
     system_conf = GlobalConfig()
-    agent = BenchmarkAgent(task=question, max_iterations=system_conf.execution.max_iterations)
+    agent = await create_benchmark_agent(
+        task=question,
+        config=system_conf,
+        max_iterations=system_conf.execution.max_iterations,
+    )
 
     try:
         await agent.execute()
