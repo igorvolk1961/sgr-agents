@@ -238,6 +238,7 @@ tramp
 temp_research/
 tmp/
 .tmp/
+.cursorrules
 
 # Кэш поисковых результатов
 search_cache/
@@ -289,6 +290,8 @@ benchmark/~$*.xlsx
 *.xlsx
 !assets/*.xlsx
 benchmark_logs/
+benchmark/benchmark.bat
+benchmark/data/
 
 # Временные скрипты
 temp_*.py

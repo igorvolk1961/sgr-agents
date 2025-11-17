@@ -18,6 +18,12 @@ from sgr_deep_research.core.tools import (
     BaseTool,
     ClarificationTool,
     ReasoningTool,
+    WebSearchTool,
+    ExtractPageContentTool,
+    GeneratePlanTool,
+    AdaptPlanTool,
+    CreateReportTool,
+    FinalAnswerTool,
 )
 
 
@@ -201,3 +207,63 @@ class BaseAgent(AgentRegistryMixin):
             if self.streaming_generator is not None:
                 self.streaming_generator.finish()
             self._save_agent_log()
+
+    # def _filter_tools(self, tools: set[list[BaseTool]]) -> set[list[BaseTool]]:
+    #     ### Filters tool set based on context state ###
+    #     if self._context.clarifications_used >= self.max_clarifications:
+    #         tools -= {
+    #             ClarificationTool,
+    #         }
+    #     if self._context.searches_used >= self.max_searches:
+    #         tools -= {
+    #             WebSearchTool,
+    #         }
+    #     return tools
+
+    def _filter_tools(self, tools: set[list[BaseTool]]) -> set[list[BaseTool]]:
+        ### Filters tool set based on context state ###
+        if self._context.clarifications_used >= self.max_clarifications:
+            tools -= {
+                ClarificationTool,
+            }
+        if self._context.searches_used >= self.max_searches:
+            tools -= {
+                WebSearchTool,
+            }
+        if self._context.plan_generations_used == 0:
+            tools = {
+                GeneratePlanTool,
+            }
+        else:
+            tools -= {
+                GeneratePlanTool
+            }
+        if self._context.report_creations_used > 0:
+            tools = {
+                FinalAnswerTool,
+            }
+        else:
+            tools -= {
+                FinalAnswerTool,
+            }
+        if self._context.searches_used == 0:
+            tools -= {
+                AdaptPlanTool,
+                ExtractPageContentTool,
+                CreateReportTool,
+                FinalAnswerTool,
+            }
+        if self._context.page_extractions_used == 0:
+            tools -= {
+                AdaptPlanTool,
+            }
+        if (self._context.page_extractions_used >= self.max_searches) or \
+           (self._context.page_extractions_used >= self._context.searches_used):
+            tools -= {
+                ExtractPageContentTool,
+            }
+        if self._context.plan_adaptations_used >= self._context.searches_used:
+            tools -= {
+                AdaptPlanTool,
+            }
+        return tools

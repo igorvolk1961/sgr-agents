@@ -47,14 +47,7 @@ class SGRAgent(BaseAgent):
                 CreateReportTool,
                 FinalAnswerTool,
             }
-        if self._context.clarifications_used >= self.max_clarifications:
-            tools -= {
-                ClarificationTool,
-            }
-        if self._context.searches_used >= self.max_searches:
-            tools -= {
-                WebSearchTool,
-            }
+        tools = self._filter_tools(tools)
         return NextStepToolsBuilder.build_NextStepTools(list(tools))
 
     async def _reasoning_phase(self) -> NextStepToolStub:
