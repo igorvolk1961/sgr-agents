@@ -208,57 +208,64 @@ class BaseAgent(AgentRegistryMixin):
                 self.streaming_generator.finish()
             self._save_agent_log()
 
-    # def _filter_tools(self, tools: set[list[BaseTool]]) -> set[list[BaseTool]]:
-    #     ### Filters tool set based on context state ###
-    #     if self._context.clarifications_used >= self.max_clarifications:
-    #         tools -= {
-    #             ClarificationTool,
-    #         }
-    #     if self._context.searches_used >= self.max_searches:
-    #         tools -= {
-    #             WebSearchTool,
-    #         }
-    #     return tools
-
     def _filter_tools(self, tools: set[list[BaseTool]]) -> set[list[BaseTool]]:
         ### Filters tool set based on context state ###
+
+        # Нельзя уточнять задание более заданнного числа раз
         if self._context.clarifications_used >= self.max_clarifications:
             tools -= {
                 ClarificationTool,
             }
+        # Нельзя выполнять поиск в Интернете  более заданнного числа раз
         if self._context.searches_used >= self.max_searches:
             tools -= {
                 WebSearchTool,
             }
-        if self._context.plan_generations_used == 0:
-            tools = {
-                GeneratePlanTool,
-            }
-        else:
-            tools -= {
-                GeneratePlanTool
-            }
-        if self._context.report_creations_used > 0:
-            tools = {
-                FinalAnswerTool,
-            }
-        else:
-            tools -= {
-                FinalAnswerTool,
-            }
-        if self._context.searches_used == 0:
-            tools -= {
-                AdaptPlanTool,
-                ExtractPageContentTool,
-                CreateReportTool,
-                FinalAnswerTool,
-            }
+######################################################################################
+        # # Если в наборе инструментов есть инструмент планирования,
+        # #  то он обязательно должен быть выполнен первым и только первым шагом
+        if GeneratePlanTool in tools:
+          if self._context.plan_generations_used == 0:
+              tools = {
+                  GeneratePlanTool,
+              }
+          else:
+              tools -= {
+                  GeneratePlanTool
+              }
+        # Если в наборе инструментов есть инструмент создания отчета,
+        #  то он обязательно должен быть выполнен предпоследним и только предпоследним шагом,
+        #  а за ним обязательно должен следовать инструмент формирования финального ответа, но не раньше
+        if CreateReportTool in tools:
+          if self._context.report_creations_used > 0:
+              tools = {
+                  FinalAnswerTool,
+              }
+          else:
+              tools -= {
+                  FinalAnswerTool,
+              }
+
+        # Если в наборе инструментов есть инструмент поиска в интернете,
+        # то он обязательно должен быть применен до извлечения страниц по заданным адресам,
+        # адаптации плана, создания отчета и формирования финального ответа
+        if WebSearchTool in tools:
+          if self._context.searches_used == 0:
+              tools -= {
+                  ExtractPageContentTool,
+                  AdaptPlanTool,
+                  CreateReportTool,
+                  FinalAnswerTool,
+              }
+        # Нельзя адаптировать план, не получив информации, извлеченной со страницы
+        # (Допущение: если вся нужная информация уже получена в результате поиска и извлекать данные со страницы не нужно,
+        # то и уточнять план не требуется)
         if self._context.page_extractions_used == 0:
             tools -= {
                 AdaptPlanTool,
             }
-        if (self._context.page_extractions_used >= self.max_searches) or \
-           (self._context.page_extractions_used >= self._context.searches_used):
+        # Извлекать страниц по заданным адресам можно не более 1 раза на каждый поиск адресов в Интернете
+        if self._context.page_extractions_used >= self._context.searches_used:  #здесь достаточно условия ==, но >= надежнее
             tools -= {
                 ExtractPageContentTool,
             }
