@@ -33,11 +33,7 @@ class AgentFactory:
         Returns:
             Configured AsyncOpenAI client
         """
-        if llm_config.model.startswith("gpt://") and llm_config.model.find("yandex"):
-            client_kwargs = {"base_url": llm_config.base_url, "api_key": llm_config.api_key,
-                             "project": cls.extractCloudFolder(llm_config.model)}
-        else:
-            client_kwargs = {"base_url": llm_config.base_url, "api_key": llm_config.api_key}
+        client_kwargs = {"base_url": llm_config.base_url, "api_key": llm_config.api_key}
         if llm_config.proxy:
             client_kwargs["http_client"] = httpx.AsyncClient(proxy=llm_config.proxy)
 
