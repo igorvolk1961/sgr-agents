@@ -33,7 +33,11 @@ class AgentFactory:
         Returns:
             Configured AsyncOpenAI client
         """
-        client_kwargs = {"base_url": llm_config.base_url, "api_key": llm_config.api_key}
+        if llm_config.model.startswith("gpt://") and llm_config.model.find("yandex"):
+            client_kwargs = {"base_url": llm_config.base_url, "api_key": llm_config.api_key,
+                             "project": cls.extractCloudFolder(llm_config.model)}
+        else:
+            client_kwargs = {"base_url": llm_config.base_url, "api_key": llm_config.api_key}
         if llm_config.proxy:
             client_kwargs["http_client"] = httpx.AsyncClient(proxy=llm_config.proxy)
 
@@ -114,3 +118,16 @@ class AgentFactory:
         """
         config = GlobalConfig()
         return list(config.agents.values())
+
+    @classmethod
+    def extractCloudFolder(cls, model):
+        """
+        Extracts the cloud folder from a base_url of form
+        "gpt://<cloud_folder>/..." (returns <cloud_folder>).
+        Returns None if not matched.
+        """
+        prefix = "gpt://"
+        if model.startswith(prefix):
+            after_prefix = model[len(prefix):]
+            return after_prefix.split("/", 1)[0]
+        return None
