@@ -31,6 +31,13 @@ async def lifespan(app: FastAPI):
 
 def main():
     """Start FastAPI server."""
+    # Import model_choise_agent tools to register them before loading agents
+    try:
+        import model_choise_agent.register_tools  # noqa: F401
+        logger.info("Model choice agent tools registered")
+    except ImportError as e:
+        logger.warning(f"Failed to import model_choise_agent tools: {e}")
+
     args = ServerConfig()
     config = GlobalConfig.from_yaml(args.config_file)
     config.agents.update(get_default_agents_definitions())
