@@ -57,6 +57,12 @@ class SGRAgent(BaseAgent):
             messages=await self._prepare_context(),
             max_tokens=self.llm_config.max_tokens,
             temperature=self.llm_config.temperature,
+            extra_body={
+                "provider":{
+#                    "ignore":["Chutes"]
+                    "ignore": ["Nebius AI Studio"]
+                }
+            }
         ) as stream:
             async for event in stream:
                 if event.type == "chunk":

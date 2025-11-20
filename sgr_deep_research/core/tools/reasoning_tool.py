@@ -16,14 +16,14 @@ class ReasoningTool(BaseTool):
     # Reasoning chain - step-by-step thinking process (helps stabilize model)
     reasoning_steps: list[str] = Field(
         description="Step-by-step reasoning (brief, 1 sentence each)",
-        min_length=2,
-        max_length=3,
+        min_length=1,
+        max_length=6,
     )
 
     # Reasoning and state assessment
     current_situation: str = Field(
         description="Current research situation (2-3 sentences MAX)",
-        max_length=300,
+        max_length=1300,
     )
     plan_status: str = Field(
         description="Status of current plan (1 sentence)",

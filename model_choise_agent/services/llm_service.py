@@ -135,12 +135,15 @@ class LLMService:
         logger.info(f"🤖 Calling LLM: {model} (temperature={temperature})")
 
         try:
+            # Build messages list - include system_prompt only if not empty
+            messages = []
+            if system_prompt and system_prompt.strip():
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+            
             request_kwargs = {
                 "model": model,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt},
-                ],
+                "messages": messages,
                 "max_tokens": max_tokens,
                 "temperature": temperature,
             }
@@ -164,50 +167,98 @@ class LLMService:
                 else:
                     raise ValueError("Empty parsed response from LLM")
             else:
-                # For None response_format, use stream() method (same pattern as SGR project)
-                async with client.chat.completions.stream(**request_kwargs) as stream:
-                    async for event in stream:
-                        if event.type == "chunk":
-                            if streaming_generator:
-                                streaming_generator.add_chunk(event.chunk)
-                    response = await stream.get_final_completion()
-                
-                result_text = response.choices[0].message.content
-                
-                # If response is from an agent, it may contain structured JSON
-                # Try to extract final answer from FinalAnswerTool if present
-                if result_text:
-                    try:
-                        # Try to parse as JSON to check if it's structured data
-                        parsed = json.loads(result_text)
-                        
-                        # Check if this is a FinalAnswerTool response
-                        if isinstance(parsed, dict):
-                            # Look for FinalAnswerTool structure
-                            if "tool_name_discriminator" in parsed and parsed["tool_name_discriminator"] == "FinalAnswerTool":
-                                result_text = parsed.get("answer", result_text)
-                            elif "answer" in parsed:
-                                # Direct answer field
-                                result_text = parsed["answer"]
-                            elif "response" in parsed:
-                                # Nested response field (may contain FinalAnswerTool)
-                                nested_response = parsed["response"]
-                                if isinstance(nested_response, str):
-                                    try:
-                                        nested_parsed = json.loads(nested_response)
-                                        if isinstance(nested_parsed, dict) and "answer" in nested_parsed:
-                                            result_text = nested_parsed["answer"]
-                                    except (json.JSONDecodeError, TypeError):
-                                        pass
-                    except (json.JSONDecodeError, TypeError, AttributeError):
-                        # Not JSON, use as-is
-                        pass
-                
-                if not result_text:
-                    raise ValueError("Empty response from LLM")
+                # For None response_format, use create() with stream=True (same pattern as basic_research_request.py)
+                request_kwargs["stream"] = True
+                stream = await client.chat.completions.create(**request_kwargs)
 
-                logger.info(f"✅ LLM response received ({len(result_text)} chars)")
-                return result_text
+                plain_text_parts: list[str] = []
+                tool_call_arguments: dict[str, dict[str, str]] = {}
+
+                async for chunk in stream:
+                    if not chunk.choices:
+                        continue
+
+                    delta = chunk.choices[0].delta
+                    if not delta:
+                        continue
+
+                    if delta.content:
+                        content = delta.content
+                        plain_text_parts.append(content)
+                        if streaming_generator:
+                            # Forward chunk to streaming generator
+                            streaming_generator.add_chunk_from_str(content)
+
+                    if delta.tool_calls:
+                        for tool_call in delta.tool_calls:
+                            function_call = getattr(tool_call, "function", None)
+                            if not function_call:
+                                continue
+
+                            call_id = getattr(tool_call, "id", None) or str(getattr(tool_call, "index", 0))
+                            stored = tool_call_arguments.setdefault(
+                                call_id,
+                                {
+                                    "name": function_call.name or "",
+                                    "arguments": "",
+                                },
+                            )
+
+                            if function_call.arguments:
+                                stored["arguments"] += function_call.arguments
+
+                def _extract_answer_from_payload(payload: dict) -> str | None:
+                    if not isinstance(payload, dict):
+                        return None
+
+                    if payload.get("tool_name_discriminator") == "FinalAnswerTool":
+                        return payload.get("answer")
+
+                    if payload.get("answer") and payload.get("completed_steps"):
+                        return payload.get("answer")
+
+                    response_field = payload.get("response")
+                    if isinstance(response_field, dict):
+                        return _extract_answer_from_payload(response_field)
+                    if isinstance(response_field, str):
+                        try:
+                            nested = json.loads(response_field)
+                        except (json.JSONDecodeError, TypeError):
+                            return None
+                        if isinstance(nested, dict):
+                            return _extract_answer_from_payload(nested)
+                    return None
+
+                def _try_parse_json(text: str) -> dict | None:
+                    if not text or not text.strip():
+                        return None
+                    try:
+                        parsed_json = json.loads(text)
+                    except (json.JSONDecodeError, TypeError):
+                        return None
+                    return parsed_json if isinstance(parsed_json, dict) else None
+
+                for call_data in tool_call_arguments.values():
+                    parsed_payload = _try_parse_json(call_data.get("arguments", ""))
+                    if not parsed_payload:
+                        continue
+                    answer = _extract_answer_from_payload(parsed_payload)
+                    if answer:
+                        logger.info("✅ LLM response received (FinalAnswerTool extracted)")
+                        return answer
+
+                combined_text = "".join(plain_text_parts).strip()
+                if combined_text:
+                    parsed_text = _try_parse_json(combined_text)
+                    if parsed_text:
+                        answer = _extract_answer_from_payload(parsed_text)
+                        if answer:
+                            logger.info("✅ LLM response received (answer parsed from JSON)")
+                            return answer
+                    logger.info(f"✅ LLM response received ({len(combined_text)} chars)")
+                    return combined_text
+
+                raise ValueError("Empty response from LLM")
 
         except Exception as e:
             logger.error(f"Error calling LLM: {e}")
