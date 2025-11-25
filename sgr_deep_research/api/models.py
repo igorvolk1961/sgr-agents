@@ -1,44 +1,9 @@
 """OpenAI-compatible models for API endpoints."""
 
 from datetime import datetime
-from enum import Enum
 from typing import Any, Dict, List, Literal
 
 from pydantic import BaseModel, Field
-
-from sgr_deep_research.core.agents import (
-    SGRAutoToolCallingResearchAgent,
-    SGRResearchAgent,
-    SGRSOToolCallingResearchAgent,
-    SGRToolCallingResearchAgent,
-    ToolCallingResearchAgent,
-)
-from sgr_deep_research.core.agents.extensions import SGRToolCallingResearchAgentDeepseek
-
-
-class AgentModel(str, Enum):
-    """Available agent models for chat completion."""
-
-    SGR_AGENT = SGRResearchAgent.name
-    SGR_TOOLS_AGENT = SGRToolCallingResearchAgent.name
-    SGR_AUTO_TOOLS_AGENT = SGRAutoToolCallingResearchAgent.name
-    SGR_SO_TOOLS_AGENT = SGRSOToolCallingResearchAgent.name
-    TOOLS_AGENT = ToolCallingResearchAgent.name
-    # extension
-    SGR_TOOLS_AGENT_DEEPSEEK = SGRToolCallingResearchAgentDeepseek.name
-
-
-
-# Mapping of agent types to their classes
-AGENT_MODEL_MAPPING = {
-    AgentModel.SGR_AGENT: SGRResearchAgent,
-    AgentModel.SGR_TOOLS_AGENT: SGRToolCallingResearchAgent,
-    AgentModel.SGR_AUTO_TOOLS_AGENT: SGRAutoToolCallingResearchAgent,
-    AgentModel.SGR_SO_TOOLS_AGENT: SGRSOToolCallingResearchAgent,
-    AgentModel.TOOLS_AGENT: ToolCallingResearchAgent,
-    # extension
-    AgentModel.SGR_TOOLS_AGENT_DEEPSEEK: SGRToolCallingResearchAgentDeepseek,
-}
 
 
 class ChatMessage(BaseModel):
@@ -52,9 +17,11 @@ class ChatCompletionRequest(BaseModel):
     """Request for creating chat completion."""
 
     model: str | None = Field(
-        default=AgentModel.SGR_AGENT,
+        default="sgr_tool_calling_agent",
         description="Agent type or existing agent identifier",
-        examples=[AgentModel.SGR_AGENT.value],
+        examples=[
+            "sgr_tool_calling_agent",
+        ],
     )
     messages: List[ChatMessage] = Field(description="List of messages")
     stream: bool = Field(default=True, description="Enable streaming mode")
@@ -83,7 +50,7 @@ class ChatCompletionResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: Literal["healthy"] = "healthy"
-    service: str = Field(default="SGR Deep Research API", description="Service name")
+    service: str = Field(default="SGR Agent Core API", description="Service name")
 
 
 class AgentStateResponse(BaseModel):

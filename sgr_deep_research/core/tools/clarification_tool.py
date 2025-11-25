@@ -7,11 +7,12 @@ from pydantic import Field
 from sgr_deep_research.core.base_tool import BaseTool
 
 if TYPE_CHECKING:
+    from sgr_deep_research.core.agent_definition import AgentConfig
     from sgr_deep_research.core.models import ResearchContext
 
 
 class ClarificationTool(BaseTool):
-    """Ask clarifying questions when facing ambiguous request.
+    """Ask clarifying questions when facing an ambiguous request.
 
     Keep all fields concise - brief reasoning, short terms, and clear questions.
     """
@@ -29,9 +30,9 @@ class ClarificationTool(BaseTool):
     )
     questions: list[str] = Field(
         description="3 specific clarifying questions (short and direct)",
-        min_length=3,
+        min_length=1,
         max_length=3,
     )
 
-    async def __call__(self, context: ResearchContext) -> str:
+    async def __call__(self, context: ResearchContext, config: AgentConfig, **_) -> str:
         return "\n".join(self.questions)

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sgr-deep-research"
 dynamic = ["version"]
-description = "SGR Deep Research - Schema-Guided Reasoning for Deep Research"
+description = "SGR Agent Core - Schema-Guided Reasoning for building agent"
 readme = "README.md"
 authors = [
     {name = "virrius"},
@@ -15,7 +15,7 @@ authors = [
     {name = "Shadekss"},
     {name = "mixaill76"}
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = {text = "MIT"}
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -23,30 +23,29 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 keywords = ["ai", "research", "reasoning", "schema-guided", "openai"]
 
 dependencies = [
-    # Core dependencies - основные зависимости для работы системы
+    # Core dependencies
     "openai>=1.0.0",
     "pydantic>=2.0.0",
     "rich>=13.0.0",
-    # HTTP client with proxy support - HTTP клиент с поддержкой прокси
+    # HTTP client with proxy support
     "httpx>=0.25.0",
     "socksio>=1.0.0",
-    # Search and research - поиск и исследования
+    # Search and research
     "tavily-python>=0.3.0",
-    # Web scraping and content extraction - веб-скрапинг и извлечение контента
+    # Web scraping and content extraction
     "trafilatura>=1.6.0",
     "youtube-transcript-api>=0.6.0",
-    # Configuration and utilities - конфигурация и утилиты
+    # Configuration and utilities
     "PyYAML>=6.0",
-    "envyaml>=1.10.0",
     "python-dateutil>=2.8.0",
     "pydantic-settings>=2.10.1",
     "fastapi>=0.116.1",
@@ -68,6 +67,7 @@ sgr = "sgr_deep_research.__main__:main"
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
     "black>=23.0.0",
     "isort>=5.12.0",
     "flake8>=6.0.0",
@@ -76,6 +76,7 @@ dev = [
 tests = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -93,3 +94,6 @@ version = {attr = "sgr_deep_research.__version__"}
 
 [tool.setuptools.package-data]
 "sgr_deep_research" = ["**/*.yaml", "**/*.yml", "**/*.json", "**/*.txt"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

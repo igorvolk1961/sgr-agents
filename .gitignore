@@ -2,9 +2,11 @@
 
 # БЕЗОПАСНОСТЬ - API КЛЮЧИ И КОНФИДЕНЦИАЛЬНЫЕ ДАННЫЕ
 config.yaml
+agents.yaml
 *.env
 .env*
 venv/
+.vite/
 secrets.yaml
 secrets.json
 config.yaml.bak
@@ -25,6 +27,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!sgr-deep-research-frontend/src/shared/lib/
 lib64/
 parts/
 sdist/
@@ -269,7 +272,6 @@ sandbox/
 
 # РАЗРАБОТКА И ТЕСТИРОВАНИЕ
 # Тестовые файлы
-test_*.py
 *_test.py
 tests/temp/
 test_output/
