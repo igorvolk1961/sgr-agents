@@ -2,7 +2,6 @@
 
 # БЕЗОПАСНОСТЬ - API КЛЮЧИ И КОНФИДЕНЦИАЛЬНЫЕ ДАННЫЕ
 /config.yaml
-/agents.yaml
 *.env
 .env*
 .vite/
