@@ -6,6 +6,14 @@ from pathlib import Path
 import uvicorn
 import yaml
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    # python-dotenv is optional, environment variables can be set manually
+    pass
+
 from sgr_agent_core.agent_config import GlobalConfig
 from sgr_agent_core.server.app import app
 from sgr_agent_core.server.settings import ServerConfig, setup_logging

@@ -1,0 +1,40 @@
+# SGR Research Agent - Configuration Template
+# Production-ready configuration for Schema-Guided Reasoning
+# Copy this file to config.yaml and fill in your API keys
+
+# LLM Configuration
+# API key can be provided via environment variable SGR__LLM__API_KEY
+llm:
+#  api_key: "ak_-XOViNE9NTAEK47VB6pr0cNy08nxd2IXpX9yFZgei4A"  # Optional: Can be set via SGR__LLM__API_KEY env var
+#  base_url: "https://api.deepseek.com/v1"  # Optional: Can be set via SGR__LLM__BASE_URL env var
+#  model: "deepseek-chat"                 # Optional: Can be set via SGR__LLM__MODEL env var
+  max_tokens: 8000                     # Maximum number of tokens
+  temperature: 0.4                     # Generation temperature (0.0-1.0)
+  proxy: ""                            # Example: "socks5://127.0.0.1:1081" or "http://127.0.0.1:8080" or leave empty for no proxy
+
+# Search Configuration (Tavily)
+# API key can be provided via environment variable SGR__SEARCH__TAVILY_API_KEY
+search:
+#  tavily_api_key: "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"  # Optional: Can be set via SGR__SEARCH__TAVILY_API_KEY env var
+  tavily_api_base_url: "https://api.tavily.com"  # Tavily API base URL
+  max_results: 10                      # Maximum number of search results
+  max_pages: 5                         # Maximum pages to scrape per search
+  content_limit: 1500                  # Character limit for full content per source
+
+# Execution Settings
+execution:
+  max_steps: 6                         # Maximum number of execution steps
+  reports_dir: "reports"               # Directory for saving reports
+  logs_dir: "logs"                     # Directory for saving reports
+
+# Prompts Settings
+prompts:
+  system_prompt_file: "sgr_agent_core/prompts/system_prompt.txt"  # System prompt file
+
+# Logging Settings
+logging:
+  config_file: "logging_config.yaml"  # Logging configuration file path
+
+mcp: {}
+
+agents: {}

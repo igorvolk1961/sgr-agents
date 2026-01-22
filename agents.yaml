@@ -1,0 +1,34 @@
+# Example Custom Agents Configuration
+# =====================================
+# This file demonstrates how to define custom agents for SGR Agent Core.
+
+# Notes:
+# ------
+# 1. Agent names must be unique or will be overridden
+# 2. All tools must be registered in the tool registry
+# 3. LLM, Search, Prompts, Execution, MCP settings are optional and inherit from global config
+# 4. Agents override global settings by providing their own values
+
+agents:
+  sgr_agent:
+    base_class: "SGRToolCallingAgent"
+
+    llm:
+      temperature: 0.1
+      max_tokens: 4000
+
+    execution:
+      max_steps: 4
+      max_iterations: 8
+      max_clarifications: 2
+      max_searches: 3
+      max_retries: 7
+
+    prompts:
+      system_prompt_file: "sgr_agent_core/prompts/system_prompt.txt"  # System prompt file
+
+    tools:
+      - "WebSearchTool"
+      - "ExtractPageContentTool"
+      - "CreateReportTool"
+      - "FinalAnswerTool"

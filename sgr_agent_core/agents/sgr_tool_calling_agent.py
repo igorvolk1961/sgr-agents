@@ -38,6 +38,10 @@ class SGRToolCallingAgent(BaseAgent):
         self.tool_choice: Literal["required"] = "required"
 
     async def _reasoning_phase(self) -> ReasoningTool:
+        for retry in range(self.config.execution.max_retries):
+            pass
+        except:
+
         async with self.openai_client.chat.completions.stream(
             messages=await self._prepare_context(),
             tools=[pydantic_function_tool(ReasoningTool, name=ReasoningTool.tool_name)],
